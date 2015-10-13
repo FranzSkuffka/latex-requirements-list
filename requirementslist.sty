@@ -1,0 +1,92 @@
+\documentclass{book}
+
+%% This package will make dealing with the ``requirements'' environment a lot easier:
+\usepackage{environ}
+
+%% This counter is used to track the number of requirements:
+\newcounter{requirements}
+\setcounter{requirements}{0}
+
+%% This is a macro that gets called by the .aux file to load in data.
+\gdef\savedreq#1#2{\expandafter\gdef\csname req#1\endcsname{#2}}
+
+%% This macro will save the given requirement to the .aux file so we will have it during the next LaTeX pass to put in the list:
+\makeatletter
+    \def\recordrequirement#1{\immediate\write\@mainaux{\string\savedreq{\the\value{requirements}}{#1}}}
+\makeatother
+
+\NewEnviron{requirement}{
+  \noindent
+  \begingroup
+    %% Increment the requirement counter
+    \refstepcounter{requirements}
+    %% Here is the ``Req.'' text:
+    \textbf{Req.~\arabic{requirements}}
+    %% Make a label that we can use to refer to this counter:
+    \label{req:\arabic{requirements}}
+    %% Next, save this requirement to the .aux file so we will have it during the next LaTeX pass to put in the list:
+    \recordrequirement{\BODY}
+    %% We will make the remainder italic:
+    \it
+    \BODY
+  \endgroup
+}
+
+\newcommand{\listofrequirements}{
+  %% First, we need to make sure that this is not the first LaTeX pass (i.e., that all of the information has already been recorded to the .aux file):
+  \expandafter\ifx\csname totalreqsplusone\endcsname\relax
+    Please run \LaTeX\ again to populate this list!
+  \else
+    \begingroup
+      %% This \reqi counter is what we are going to use to iterate over the requirements:
+      \newcount\reqi
+      \reqi=0
+      \loop
+        \advance\reqi by 1
+      \ifnum\reqi<\totalreqsplusone
+        %% The requirement numbered \reqi exists!
+        \noindent\textbf{\the\reqi} \csname req\the\reqi\endcsname\leaders\hbox to 1em{\hss.\hss}\hfill\pageref{req:\the\reqi}\\
+      \repeat
+    \endgroup
+  \fi
+}
+
+%% At the end of the document, we need to record to the .aux the total number of requirements!
+\makeatletter
+\AtEndDocument{
+  \refstepcounter{requirements}
+  \immediate\write\@mainaux{\string\xdef\string\totalreqsplusone{\the\value{requirements}}}
+}
+\makeatother
+
+\begin{document}
+
+\section*{List of Requirements}
+
+\listofrequirements
+
+\section*{Requirements}
+
+\begin{requirement}
+  First requirement!
+\end{requirement}\\
+
+\begin{requirement}
+  Requirement number two!
+\end{requirement}
+
+\vfill
+\pagebreak
+
+\begin{requirement}
+  You can even have very long requirements: Lorem ipsum dolor sit
+  amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt
+  ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
+  nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+  consequat. Duis aute irure dolor in reprehenderit in voluptate velit
+  esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
+  cupidatat non proident, sunt in culpa qui officia deserunt mollit
+  anim id est laborum.
+\end{requirement}
+
+\end{document}
